@@ -10,3 +10,4 @@ backend/chroma_db/
 *.pickle
 backend/chroma_db/
 chroma_db/
+models/saved/
