@@ -8,3 +8,5 @@ backend/chroma_db/
 *.bin
 *.sqlite3
 *.pickle
+backend/chroma_db/
+chroma_db/
