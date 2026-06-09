@@ -1,0 +1,10 @@
+.env
+venv/
+__pycache__/
+*.pyc
+*.pkl
+chroma_db/
+backend/chroma_db/
+*.bin
+*.sqlite3
+*.pickle
