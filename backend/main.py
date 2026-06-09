@@ -44,18 +44,21 @@ def root():
 
 @app.post("/analyse")
 def analyse(input: TextInput):
-    muril_result = muril_predict(input.text)
-    vader_scores = vader.polarity_scores(input.text)
-    vader_label  = (
-        "positive" if vader_scores["compound"] >= 0.05
-        else "negative" if vader_scores["compound"] <= -0.05
-        else "neutral"
-    )
-    return {
-        "text":  input.text,
-        "muril": {"label": muril_result["label"], "confidence": muril_result["score"]},
-        "vader": {"label": vader_label, "compound": round(vader_scores["compound"], 3)}
-    }
+    try:
+        muril_result = muril_predict(input.text)
+        vader_scores = vader.polarity_scores(input.text)
+        vader_label  = (
+            "positive" if vader_scores["compound"] >= 0.05
+            else "negative" if vader_scores["compound"] <= -0.05
+            else "neutral"
+        )
+        return {
+            "text":  input.text,
+            "muril": {"label": muril_result["label"], "confidence": muril_result["score"]},
+            "vader": {"label": vader_label, "compound": round(vader_scores["compound"], 3)}
+        }
+    except Exception as e:
+       return {"error": str(e)}
 
 @app.get("/brand/{name}/trend")
 def brand_trend(name: str):
@@ -108,6 +111,6 @@ def stats():
 
 @app.post("/chat")
 def chat(input: ChatInput):
-    from backend.rag import rag_chat
+    from rag import rag_chat
     result = rag_chat(input.question, input.chat_history)
     return result
