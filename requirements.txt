@@ -1,4 +1,4 @@
-transformers==4.40.0
+transformers==4.46.0
 datasets
 torch
 scikit-learn
