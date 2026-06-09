@@ -1,8 +1,8 @@
 ---
 title: BharatSentiment
-emoji: 🇮🇳
-colorFrom: orange
-colorTo: green
+emoji: 🚀
+colorFrom: green
+colorTo: blue
 sdk: docker
 pinned: false
 ---
