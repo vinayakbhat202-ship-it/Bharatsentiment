@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-API = "http://127.0.0.1:8000"
+API = "https://vinny2005-bharatsentiment.hf.space"
 
 st.set_page_config(
     page_title="BharatSentiment Pro",
