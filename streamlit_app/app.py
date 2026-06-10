@@ -3,8 +3,30 @@ import requests
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-API =  "https://bharatsentiment-production.up.railway.app"
+API = "https://bharatsentiment-production.up.railway.app"
+HF_API_URL = "https://api-inference.huggingface.co/models/vinny2005/bharatsentiment-muril"
+HF_TOKEN = st.secrets.get("HF_TOKEN", "")
+
+vader = SentimentIntensityAnalyzer()
+
+def muril_predict(text):
+    try:
+        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+        response = requests.post(HF_API_URL, headers=headers, json={"inputs": text}, timeout=15)
+        result = response.json()
+        if isinstance(result, list) and len(result) > 0:
+            top = max(result[0], key=lambda x: x["score"])
+            return {"label": top["label"].lower(), "score": round(top["score"], 3)}
+    except Exception:
+        pass
+    return {"label": "neutral", "score": 0.5}
+
+def vader_predict(text):
+    scores = vader.polarity_scores(text)
+    label = "positive" if scores["compound"] >= 0.05 else "negative" if scores["compound"] <= -0.05 else "neutral"
+    return {"label": label, "compound": round(scores["compound"], 3)}
 
 st.set_page_config(
     page_title="BharatSentiment Pro",
@@ -72,7 +94,6 @@ if page == "Live Analyser":
 
     st.write("")
 
-    # ── Use session state so example button pre-fills the text area ──
     if "input_text" not in st.session_state:
         st.session_state.input_text = ""
 
@@ -96,48 +117,40 @@ if page == "Live Analyser":
             st.warning("Enter some text first.")
         else:
             with st.spinner("Analysing..."):
-                try:
-                    r = requests.post(f"{API}/analyse", json={"text": text.strip()}, timeout=60)
-                    r.raise_for_status()
-                    payload = r.json()
+                muril_data = muril_predict(text.strip())
+                vader_data = vader_predict(text.strip())
 
-                    muril_data = payload.get("muril", {})
-                    vader_data = payload.get("vader", {})
+                muril_label = muril_data["label"]
+                muril_conf  = muril_data["score"]
+                vader_label = vader_data["label"]
+                vader_comp  = vader_data["compound"]
 
-                    muril_label = str(muril_data.get("label", "neutral")).lower()
-                    muril_conf  = float(muril_data.get("confidence", 0.0))
-                    vader_label = str(vader_data.get("label", "neutral")).lower()
-                    vader_comp  = float(vader_data.get("compound", 0.0))
+                st.markdown("<p style='color:#737373; font-size:0.8rem; font-weight:600; letter-spacing:1px; margin-top:1rem;'>ANALYSIS RESULT</p>", unsafe_allow_html=True)
 
-                    st.markdown("<p style='color:#737373; font-size:0.8rem; font-weight:600; letter-spacing:1px; margin-top:1rem;'>ANALYSIS RESULT</p>", unsafe_allow_html=True)
+                r1, r2 = st.columns(2)
+                with r1:
+                    st.markdown(f"""
+                    <div class='custom-card'>
+                        <p style='color:#737373; font-size:0.8rem;'>MURIL (FINE-TUNED)</p>
+                        <span class='pill-{muril_label}'>{muril_label.upper()}</span>
+                        <p style='color:#737373; font-size:0.8rem; margin-top:12px;'>Confidence: {muril_conf*100:.1f}%</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.progress(muril_conf)
 
-                    r1, r2 = st.columns(2)
-                    with r1:
-                        st.markdown(f"""
-                        <div class='custom-card'>
-                            <p style='color:#737373; font-size:0.8rem;'>MURIL (FINE-TUNED)</p>
-                            <span class='pill-{muril_label}'>{muril_label.upper()}</span>
-                            <p style='color:#737373; font-size:0.8rem; margin-top:12px;'>Confidence: {muril_conf*100:.1f}%</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        st.progress(muril_conf)
+                with r2:
+                    normalized = (vader_comp + 1) / 2
+                    st.markdown(f"""
+                    <div class='custom-card'>
+                        <p style='color:#737373; font-size:0.8rem;'>VADER (RULE-BASED)</p>
+                        <span class='pill-{vader_label}'>{vader_label.upper()}</span>
+                        <p style='color:#737373; font-size:0.8rem; margin-top:12px;'>Compound: {vader_comp:+.3f}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.progress(max(0.0, min(normalized, 1.0)))
 
-                    with r2:
-                        normalized = (vader_comp + 1) / 2
-                        st.markdown(f"""
-                        <div class='custom-card'>
-                            <p style='color:#737373; font-size:0.8rem;'>VADER (RULE-BASED)</p>
-                            <span class='pill-{vader_label}'>{vader_label.upper()}</span>
-                            <p style='color:#737373; font-size:0.8rem; margin-top:12px;'>Compound: {vader_comp:+.3f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        st.progress(max(0.0, min(normalized, 1.0)))
-
-                    if muril_label != vader_label:
-                        st.info("💡 MuRIL and VADER disagree — Hinglish slang confuses rule-based systems. MuRIL understands code-mixed context.")
-
-                except requests.exceptions.RequestException as e:
-                    st.error(f"API error: {e}. Is FastAPI running on port 8000?")
+                if muril_label != vader_label:
+                    st.info("💡 MuRIL and VADER disagree — Hinglish slang confuses rule-based systems. MuRIL understands code-mixed context.")
 
 # ══════════════════════════════════════════════════════════════════
 # PAGE 2 — BRAND EXPLORER
@@ -286,4 +299,3 @@ elif page == "Model Insights":
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("[🤗 vinny2005/bharatsentiment-muril](https://huggingface.co/vinny2005/bharatsentiment-muril)")
-  
