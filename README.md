@@ -2,7 +2,7 @@
 > Hinglish (Hindi+English) Sentiment Analysis for Indian social media
 
 ## Live Demo
-- 🖥️ App: https://bharatsentiment.streamlit.app
+- 🖥️ App: https://bharatsentiment-g4eb7gqvfebrbcwg8kryrf.streamlit.app/
 - ⚡ API: https://vinny2005-bharatsentiment.hf.space/docs
 
 ## Results
