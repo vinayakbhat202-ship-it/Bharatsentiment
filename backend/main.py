@@ -13,7 +13,7 @@ load_dotenv()
 app = FastAPI(title="BharatSentiment API")
 
 # ── HuggingFace Inference API (no local model loading) ────
-HF_API_URL = "https://api-inference.huggingface.co/models/vinny2005/bharatsentiment-muril"
+HF_API_URL = "https://router.huggingface.co/hf-inference/models/vinny2005/bharatsentiment-muril/v1/chat/completions"
 HF_TOKEN   = os.getenv("HF_TOKEN")
 vader      = SentimentIntensityAnalyzer()
 
