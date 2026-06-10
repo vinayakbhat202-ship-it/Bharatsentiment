@@ -5,32 +5,23 @@ import plotly.express as px
 import plotly.graph_objects as go
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-API = "https://bharatsentiment-production.up.railway.app"
+API = "https://vinny2005-bharatsentiment.hf.space"
 HF_API_URL = "https://api-inference.huggingface.co/models/vinny2005/bharatsentiment-muril"
 HF_TOKEN = st.secrets.get("HF_TOKEN", "")
 
 vader = SentimentIntensityAnalyzer()
 
 def muril_predict(text):
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    for attempt in range(3):
-        try:
-            response = requests.post(HF_API_URL, headers=headers, json={"inputs": text}, timeout=20)
-            result = response.json()
-            # Model loading
-            if "estimated_time" in str(result):
-                import time
-                time.sleep(10)
-                continue
-            if isinstance(result, list) and len(result) > 0:
-                top = max(result[0], key=lambda x: x["score"])
-                return {"label": top["label"].lower(), "score": round(top["score"], 3)}
-        except Exception:
-            pass
-    # VADER fallback
-    scores = vader.polarity_scores(text)
-    label = "positive" if scores["compound"] >= 0.05 else "negative" if scores["compound"] <= -0.05 else "neutral"
-    return {"label": label, "score": abs(round(scores["compound"], 3))}
+    try:
+        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+        response = requests.post(HF_API_URL, headers=headers, json={"inputs": text}, timeout=15)
+        result = response.json()
+        if isinstance(result, list) and len(result) > 0:
+            top = max(result[0], key=lambda x: x["score"])
+            return {"label": top["label"].lower(), "score": round(top["score"], 3)}
+    except Exception:
+        pass
+    return {"label": "neutral", "score": 0.5}
 
 def vader_predict(text):
     scores = vader.polarity_scores(text)
