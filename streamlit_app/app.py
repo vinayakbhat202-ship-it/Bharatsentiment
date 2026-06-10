@@ -117,8 +117,17 @@ if page == "Live Analyser":
             st.warning("Enter some text first.")
         else:
             with st.spinner("Analysing..."):
-                muril_data = muril_predict(text.strip())
-                vader_data = vader_predict(text.strip())
+                r = requests.post(f"{API}/analyse", json={"text": text.strip()}, timeout=60)
+                  r.raise_for_status()
+                  payload = r.json()
+                  muril_data = payload.get("muril", {})
+                  vader_data = payload.get("vader", {})
+                  muril_label = str(muril_data.get("label", "neutral")).lower()
+                  muril_conf  = float(muril_data.get("confidence", 0.0))
+                  vader_label = str(vader_data.get("label", "neutral")).lower()
+                  vader_comp  = float(vader_data.get("compound", 0.0))
+
+
 
                 muril_label = muril_data["label"]
                 muril_conf  = muril_data["score"]
